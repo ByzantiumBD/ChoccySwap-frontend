@@ -20,12 +20,8 @@
 				<img src={writing} alt="choccyswap" class="h-[30px] px-3" />
 			</a>
 			<div class="max-[599px]:hidden allcenter ml-auto">
-				<div id="links" class="allcenter ml-auto space-x-8 font-medium">
-					<a href="/" class=""> Stats </a>
-					<a href="/" class=""> Pools </a>
-				</div>
 				{#if isSwap}
-					<button id="swapbutton" class="py-1.5 px-7 font-semibold ml-8"> Connect Wallet </button>
+					<button id="swapbutton" class="py-1.5 px-7 text-2xl font-semibold ml-8"> 🤔 </button>
 				{:else}
 					<a href="/swap" id="swapbutton" class="py-1.5 px-7 font-semibold ml-8"> Swap Now </a>
 				{/if}
@@ -41,11 +37,8 @@
 					id="topbarmenu"
 					class="min-[600px]:!hidden absolute top-full right-0 p-3 gap-3 w-[500%]"
 				>
-					<a href="/" class=""> Stats </a>
-					<a href="/" class=""> Pools </a>
-
 					{#if isSwap}
-						<button id="swapbutton" class="py-1.5 px-7 font-semibold"> Connect Wallet </button>
+						<button id="swapbutton" class="py-1.5 px-7 font-semibold"> 🤔 </button>
 					{:else}
 						<a href="/swap" id="swapbutton" class="py-1.5 px-7 font-semibold"> Swap Now </a>
 					{/if}

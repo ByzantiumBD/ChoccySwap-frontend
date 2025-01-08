@@ -1,70 +1,76 @@
 <script lang="ts">
-	import Settings from '$lib/components/settings.svelte';
-	import Tokens from '$lib/components/tokens.svelte';
-	import SwapBox from '$lib/sections/Swap/SwapBox.svelte';
-	import type { TokenInfo } from '$lib/types';
-	import { ASSET_TYPE_FT4, createAmount } from '@chromia/ft4';
-	import { Buffer } from 'buffer';
-	import { onMount } from 'svelte';
+	import { onMount } from "svelte";
 
-	let isTokensHidden = $state(true);
-	let isSettingsHidden = $state(true);
-	let token1: TokenInfo | undefined = $state(undefined);
-	let token2: TokenInfo | undefined = $state(undefined);
+	let target = new Date("2025-01-10T12:00:00Z")
+	let time = $state(target.valueOf() - new Date().valueOf())
 
-	function switchTokens() {
-		let t = token1;
-		token1 = token2;
-		token2 = t;
+
+	const MILLIS_PER_HOUR = 60*60*1000
+	const MILLIS_PER_MINUTE = 60*1000
+	function splitTimeDiff(time: number) {
+		let hours = Math.floor(time / MILLIS_PER_HOUR)
+		let t = time - hours * MILLIS_PER_HOUR
+		let minutes = Math.floor(t / MILLIS_PER_MINUTE)
+		t -= minutes * MILLIS_PER_MINUTE
+		let seconds = Math.floor(t / 1000)
+		return {
+			hours: twoDigits(hours), 
+			minutes: twoDigits(minutes), 
+			seconds: twoDigits(seconds)
+		}
+	}
+	function twoDigits(num: number) {
+		let n = num.toString();
+		return n.length === 2? n : '0'+n
 	}
 
-	function close() {
-		isTokensHidden = true;
-	}
-	function openTokens() {
-		isTokensHidden = false;
-	}
-
-	function closeSettings() {
-		isSettingsHidden = true;
-	}
-	function openSettings() {
-		isSettingsHidden = false;
-	}
+	let timeDiff = $derived(splitTimeDiff(time))
 
 	onMount(() => {
-		token1 = {
-			asset: {
-				name: 'Ethereum',
-				id: Buffer.alloc(32),
-				symbol: 'ETH',
-				decimals: 18,
-				blockchainRid: Buffer.alloc(32),
-				iconUrl:
-					'https://ethereum.org/_next/image/?url=%2F_next%2Fstatic%2Fmedia%2Feth-diamond-glyph.3cd60daa.png&w=828&q=75',
-				type: ASSET_TYPE_FT4,
-				supply: 0n
-			},
-			amountOwned: createAmount(1.02, 18),
-			amountToExchange: createAmount(1.015, 18)
-		};
-		token2 = {
-			asset: {
-				name: 'Chroma',
-				id: Buffer.alloc(32),
-				symbol: 'CHR',
-				decimals: 6,
-				blockchainRid: Buffer.alloc(32),
-				iconUrl: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3978.png',
-				type: ASSET_TYPE_FT4,
-				supply: 0n
-			},
-			amountOwned: createAmount(1216.792, 6),
-			amountToExchange: createAmount(1000, 6)
+		const interval = setInterval(() => {
+			time = target.valueOf() - new Date().valueOf();
+		}, 1000);
+
+		return () => {
+			clearInterval(interval);
 		};
 	});
 </script>
 
-<SwapBox {openTokens} {openSettings} {token1} {token2} {switchTokens} />
-<Tokens {close} isHidden={isTokensHidden} />
-<Settings close={closeSettings} isHidden={isSettingsHidden} />
+<div class="overflow-hidden absolute bg-black w-screen min-h-screen flex flex-col justify-between">
+	<p class="timer allcenter">{timeDiff.hours}:{timeDiff.minutes}:{timeDiff.seconds}</p>
+	<p class="phase allcenter">Phase 1/4</p>
+</div>
+
+<style>
+	div {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+	p {
+		color: #b5178e;
+		font-weight: 900;
+		font-size: 70pt;
+		&.timer {
+			font-size: 90pt;
+		}
+	}
+	@media(max-width: 520px) {
+		p.timer {
+			font-size: 50pt !important;
+		}
+		p.phase {
+			font-size: 30pt !important;
+		}
+	}
+	@media(max-width: 780px) {
+		p.timer {
+			font-size: 70pt;
+		}
+		p.phase {
+			font-size: 50pt;
+		}
+	}
+</style>
