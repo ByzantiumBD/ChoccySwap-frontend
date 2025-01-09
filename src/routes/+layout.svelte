@@ -9,6 +9,7 @@
 	let { children } = $props();
 
 	let isSwap = $derived(page.url.pathname.match(/swap/i) !== null);
+	let isHome = $derived(page.url.pathname.match(/^\/$/) !== null);
 /*
 	let target = new Date("2024-12-27T12:00:00Z")
 	let time = $state(target.valueOf() - new Date().valueOf())
@@ -53,7 +54,7 @@
 		{@render children()}
 	</Background>
 
-	{#if !isSwap}
+	{#if isHome}
 		<Footer/>
 	{/if}
 </div>

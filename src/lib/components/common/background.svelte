@@ -18,7 +18,7 @@
     <span class="c cmidright"></span>
     <span class="c cbottom"></span> 
     <div id="container" class="allcenter grow">
-        <div class="max-w-[1200px] z-[2] allcenter flex-col">
+        <div class="max-w-[1200px] grow self-stretch z-[2] allcenter flex-col">
             {@render children?.()} 
         </div>
     </div>
