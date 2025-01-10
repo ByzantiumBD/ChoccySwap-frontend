@@ -40,6 +40,9 @@
 	},
 	"dependencies": {
 		"@chromia/ft4": "^1.0.1",
+		"@reown/appkit": "^1.6.4",
+		"@reown/appkit-adapter-ethers": "^1.6.4",
+		"ethers": "^6.13.5",
 		"postchain-client": "^1.20.2"
 	}
 }
