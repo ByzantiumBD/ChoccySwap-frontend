@@ -2,7 +2,7 @@
 	import arrow from '$lib/images/common/arrow.svg';
 	import Tokenimg from '$lib/components/swap/tokenimg.svelte';
 	import type { TokenInfo } from '$lib/types';
-	import { makeNumberReadable, shortenNumber } from '$lib/utils';
+	import { makeNumberReadable, shortenNumber } from '$lib/number-utils';
 	import { untrack } from 'svelte';
 	type Props = {
 		isInput: boolean;

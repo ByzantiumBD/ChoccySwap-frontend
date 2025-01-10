@@ -74,8 +74,7 @@
 					{/if}
 				{:else}
 					<div id="links" class="allcenter ml-auto space-x-8 font-medium">
-						<a href="/" class=""> Stats </a>
-						<a href="/" class=""> Pools </a>
+						<a href="/pools" class=""> Pools </a>
 					</div>
 					<a href="/swap" class="pinkbutton py-1.5 px-7 font-semibold ml-8"> Swap Now </a>
 				{/if}
@@ -107,8 +106,7 @@
 							</button>
 						{/if}
 					{:else}
-						<a href="/" class=""> Stats </a>
-						<a href="/" class=""> Pools </a>
+						<a href="/pools" class=""> Pools </a>
 						<a href="/swap" class="pinkbutton py-1.5 px-7 font-semibold"> Swap Now </a>
 					{/if}
 				</div>

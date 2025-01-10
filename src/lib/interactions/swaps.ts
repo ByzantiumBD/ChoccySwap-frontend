@@ -6,7 +6,7 @@ import { formatter, type Queryable } from 'postchain-client';
 import { getCcy, sequentialize } from './utils';
 import { getAllOrdersByPriceRange } from './queries';
 
-const PRICE_PRECISION: bigint = 2n ** 256n - 1n;
+export const PRICE_PRECISION: bigint = 2n ** 256n - 1n;
 const SWAP_PERTHOU: bigint = 3n;
 const ORDER_PERTHOU: bigint = 3n;
 
@@ -64,7 +64,7 @@ function withFee(amount: bigint, isSwap: boolean) {
 	};
 }
 
-function calcPrice(amount1: bigint, amount2: bigint) {
+export function calcPrice(amount1: bigint, amount2: bigint) {
 	return (amount1 * PRICE_PRECISION) / amount2;
 }
 

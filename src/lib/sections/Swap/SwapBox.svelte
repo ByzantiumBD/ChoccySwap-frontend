@@ -8,7 +8,8 @@
 	import { getPairs, getTokenInfo } from '$lib/interactions/utils';
 	import { calcInput, calcOutput, getCorrectSwapOperation } from '$lib/interactions/routes';
 	import type { Pair, TokenInfo } from '$lib/types';
-	import { getAssetId, isCcy, setUpdater, makeNumberReadable } from '$lib/utils';
+	import { getAssetId, isCcy, setUpdater } from '$lib/utils';
+	import { makeNumberReadable } from '$lib/number-utils';
 	import { createAmount, createAmountFromBalance, type Amount, type Asset } from '@chromia/ft4';
 	import { onMount, untrack } from 'svelte';
 	import { SwapError } from '$lib/errors';

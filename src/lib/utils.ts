@@ -40,52 +40,6 @@ export function shortenId(id: Buffer) {
     return str.slice(0, 4) + '...' + str.slice(-4);
 }
 
-export function shortenNumber(number: string) {
-    const integer = number.replace(/^0+(?=[1-9])/, "").match(/^\d+/)?.[0];
-    const decimal = number.match(/(?<=\.)\d+$/)?.[0];
-
-    if (integer === undefined || integer.match(/^0+$/)) {
-        if (decimal === undefined) return "0";
-        return "0."+decimal.slice(0,6)
-    } else {
-        if (decimal === undefined || decimal.match(/^0+$/)) return integer
-        return integer+"."+decimal.slice(0,3)
-    }
-}
-    
-
-export function makeNumberReadable(number: string) {
-    const integer = number.match(/^\d+/)?.[0];
-    const decimal = number.match(/(?<=\.)\d+$/)?.[0];
-
-    if (integer === undefined) {
-        if (decimal === undefined) return "0";
-        return "0."+decimal.slice(0,3)
-    } else {
-        return addPostfix(Number(number))
-    }
-}
-
-function addPostfix(num: number) {
-    const postfixes = [
-        "", "k", "M", "B", "T", "Q"
-    ]
-
-    function trunc(str: string) {
-        return str.match(/^\d*(\.\d{1,3})?/)?.[0]??"0";
-    }
-
-    let myNum = num;
-    for (let i = 0; i < postfixes.length; i++) {
-        if (myNum / 1000 < 1) {
-            return trunc(myNum.toString()) + postfixes[i];
-        }
-        myNum = myNum /1000;
-    }
-
-    return trunc(myNum.toString())+postfixes[postfixes.length-1]
-}
-
 //================== ALERT UTILS =============================
 
 export let alerter: (e:Error) => void = (e:Error) => {throw e}

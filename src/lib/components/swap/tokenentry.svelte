@@ -1,6 +1,6 @@
 <script lang="ts">
-	import arrow from '$lib/images/swap/arrowhoriz.svg';
-	import link from '$lib/images/swap/externallink.svg';
+	import arrow from '$lib/images/common/arrowhoriz.svg';
+	import link from '$lib/images/common/externallink.svg';
 	import pin from '$lib/images/swap/pin.svg';
 	import Tokenimg from '$lib/components/swap/tokenimg.svelte';
 

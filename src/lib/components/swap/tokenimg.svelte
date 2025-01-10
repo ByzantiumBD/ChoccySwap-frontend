@@ -6,10 +6,10 @@
 		class?: string;
 		style?: string;
 		src: string;
-		alt: string;
+		alt?: string;
 	}
 
-	let { class: imgClass, style, src, alt }: Props = $props();
+	let { class: imgClass, style, src, alt="logo" }: Props = $props();
 
 	const onerror: EventHandler<Event, Element> = (e) => {
 		(e.currentTarget as HTMLImageElement).onerror = null;
