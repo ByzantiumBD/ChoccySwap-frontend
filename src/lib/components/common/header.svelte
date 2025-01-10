@@ -57,6 +57,9 @@
 				<img src={writing} alt="choccyswap" class="h-[30px] px-3" />
 			</a>
 			<div class="max-[599px]:hidden allcenter ml-auto">
+				<div id="links" class="allcenter ml-auto space-x-8 font-medium">
+					<a href="/pools" class=""> Pools </a>
+				</div>
 				{#if isSwap}
 					{#if session}
 						{#if !hideMinter}
@@ -116,21 +119,6 @@
 </div>
 
 <style lang="less">
-	div.pinkbutton:hover {
-		border: 2.34px solid #b5178e !important;
-	}
-
-	.pinkbutton {
-		background: linear-gradient(276.31deg, #ed32bf -10.17%, #b5178e 97.19%);
-		border-radius: 32px;
-		backdrop-filter: blur(5.538px);
-		border: 2.34px solid #b5178e;
-
-		&:hover {
-			border: 2.34px solid rgba(255, 255, 255, 0.326);
-		}
-	}
-
 	#header::before {
 		content: '';
 		position: absolute;

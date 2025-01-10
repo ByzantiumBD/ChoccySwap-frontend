@@ -242,7 +242,7 @@
 	{/if}
 
 	<div class="allcenter w-full px-4 mt-3">
-		<button onclick={swap} id="swapbutton" class="p-3 rounded-full w-full text-xl font-extrabold">
+		<button onclick={swap} id="swapbutton" class="disabled p-3 rounded-full w-full text-xl font-extrabold">
 			Swap
 		</button>
 	</div>
@@ -259,6 +259,10 @@
 	#swapbutton {
 		background: linear-gradient(90.5deg, #ff02d1 -4.36%, #8eeafc 104.32%);
 	}
+		#swapbutton.disabled {
+			background: linear-gradient(90.5deg, #fff1 -4.36%, #fff2 104.32%);
+			color: #fff8;
+		}
 	#switch-background {
 		--top: calc(50% - 0.25rem);
 		--bottom: calc(50% + 0.25rem);
