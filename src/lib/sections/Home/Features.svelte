@@ -70,7 +70,7 @@
 
 <style>
 	#gradientbutton {
-		background: linear-gradient(90.5deg, #ff02d1 -4.36%, #8eeafc 104.32%);
+		background: linear-gradient(90deg, #ff02d1 0, #8eeafc 100%);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;

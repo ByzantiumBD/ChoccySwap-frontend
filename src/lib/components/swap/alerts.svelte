@@ -64,7 +64,9 @@
 		</button>
 	</div>
 	<div>
-		<span class="font-base text-base opacity-70">{text}</span>
+		<span class="font-base text-base opacity-70 break-all">
+			{text}
+		</span>
 	</div>
 	<div class="relative my-3">
 		<div

@@ -8,12 +8,13 @@
 	import { getPairs, getTokenInfo } from '$lib/interactions/utils';
 	import { calcInput, calcOutput, getCorrectSwapOperation } from '$lib/interactions/routes';
 	import type { Pair, TokenInfo } from '$lib/types';
-	import { getAssetId, isCcy, setUpdater } from '$lib/utils';
+	import { getId, isCcy, setUpdater } from '$lib/utils';
 	import { makeNumberReadable } from '$lib/number-utils';
-	import { createAmount, createAmountFromBalance, type Amount, type Asset } from '@chromia/ft4';
+	import { createAmount, createAmountFromBalance, getAssetById, type Amount, type TransactionWithReceipt } from '@chromia/ft4';
 	import { onMount, untrack } from 'svelte';
 	import { SwapError } from '$lib/errors';
 	import { calcImpact } from '$lib/interactions/swaps';
+	import { TxRejectedError, type BufferId } from 'postchain-client';
 
 	let { success }: { success: (msg: string, link: string) => void } = $props();
 
@@ -35,8 +36,15 @@
 
 	let _input1: Amount = $state(createAmount(0, 0));
 	let _input2: Amount = $state(createAmount(0, 0));
-	let input1: string = $state("0");
-	let input2: string = $state("0");
+	let input1: Amount = $state(createAmount(0, 0));
+	let input2: Amount = $state(createAmount(0, 0));
+
+	let canSwap: boolean = $derived.by(() => {
+		if (!token1 || !token2) return false;
+		if (_input1.value > token1.amountOwned.value) return false;
+		if (_input1.value <= 0n) return false;
+		return true
+	})
 
 	$effect(()=>{
 		if (isCalculating) return;
@@ -65,6 +73,8 @@
 		} else {
 			_input2 = _input1;
 		}
+
+		updateQueryParams();
 		updateInputs(lastEditedInput).then(() => isCalculating = false);
 	}
 
@@ -83,19 +93,28 @@
 		isSettingsHidden = false;
 	}
 
-	async function selectToken(asset: Asset) {
-		const newAssId = getAssetId(asset);
-		const token1Id = token1 ? getAssetId(token1.asset) : '';
-		const token2Id = token2 ? getAssetId(token2.asset) : '';
+	async function selectToken(newId: BufferId) {
+		const newAssId = getId(newId);
+		const token1Id = token1 ? getId(token1.asset.id) : '';
+		const token2Id = token2 ? getId(token2.asset.id) : '';
+		const conn = await getConnection();
+		const asset = await getAssetById(conn, newAssId)
+		if (!asset) return;
 		if (currentlyChoosingInputToken) {
 			if (newAssId == token2Id) switchTokens();
 			else if (newAssId !== token1Id) {
 				token1 = await getTokenInfo(getSession(), asset);
-			} else {  return; }
+			} else {  
+				closeTokens();
+				return;
+			}
 		} else {
 			if (newAssId == token1Id) switchTokens();
 			else if (newAssId !== token2Id) {
 				token2 = await getTokenInfo(getSession(), asset);
+			} else {  
+				closeTokens();
+				return;
 			}
 		}
 		const pairs = await getPairs(await getConnection(), token1?.asset, token2?.asset);
@@ -103,7 +122,38 @@
 		pair2 = pairs.pair2;
 		closeTokens();
 
-		await updateInputs(lastEditedInput)
+		updateInputs(lastEditedInput)
+		updateQueryParams();
+	}
+
+	function updateQueryParams() {
+		const url = new URL(window.location.href);
+		if(token1) {
+			url.searchParams.set("input", getId(token1?.asset.id))
+		} else if (url.searchParams.get("input")) {
+			url.searchParams.delete("input")
+		}
+		if(token2) {
+			url.searchParams.set("output", getId(token2?.asset.id))
+		} else if (url.searchParams.get("output")) {
+			url.searchParams.delete("output")
+		}
+		history.pushState(null, '', url);
+	}
+
+	async function loadQueryParams() {
+		const url = new URL(window.location.href);
+		const inp = url.searchParams.get("input")
+		const outp = url.searchParams.get("output")
+		
+		if (inp) {
+			currentlyChoosingInputToken = true;
+			await selectToken(inp)
+		}
+		if (outp) {
+			currentlyChoosingInputToken = false;
+			await selectToken(outp)
+		}
 	}
 
 	async function swap() {
@@ -116,33 +166,43 @@
 		const slipPrecision = 100000;
 		const slip = BigInt((100-slippage)*slipPrecision);
 
-		const txReceipt = await session.call(
-			getCorrectSwapOperation(
-				pair1,
-				pair2,
-				isCcy(token2.asset),
-				_input1,
-				createAmountFromBalance(
-					(_input2.value * slip)/(100n*BigInt(slipPrecision)),
-					_input2.decimals
-				),
-				swapDeadline
+		let txReceipt: TransactionWithReceipt;
+		try {
+			txReceipt = await session.call(
+				getCorrectSwapOperation(
+					pair1,
+					pair2,
+					isCcy(token2.asset),
+					_input1,
+					createAmountFromBalance(
+						(_input2.value * slip)/(100n*BigInt(slipPrecision)),
+						_input2.decimals
+					),
+					swapDeadline
+				)
 			)
-		)
+		} catch (e) {
+			if (
+				e instanceof TxRejectedError &&
+				e.message.match(/Amount received too small, the price went out of range/i)
+			) {
+				throw new SwapError("The price of the token changed too suddenly. The swap operation reverted due to your slippage settings.")
+			}
+		}
 
-		const txRid = txReceipt.receipt.transactionRid;
+		const txRid = txReceipt!.receipt.transactionRid;
 
 		updateBalances();
 		success(
 			"Swap succeeded!",
-			"https://explorer.chromia.com/testnet/FA289E086E3D6C3277336E270BADDF75035C1F049F242AB2CF61773D2822213D/transaction/" + txRid.toString("hex")
+			"https://explorer.chromia.com/testnet/FA289E086E3D6C3277336E270BADDF75035C1F049F242AB2CF61773D2822213D/transaction/" + getId(txRid)
 		);
 	}
 
 	async function updateInputs(changedInput: boolean) {
 		if (token1 && token2) {			
 			if (changedInput) {
-				_input1 = createAmount(input1, token1.asset.decimals);
+				_input1 = createAmount(input1.toString(), token1.asset.decimals);
 				const output = await calcOutput(
 					await getConnection(),
 					_input1,
@@ -150,10 +210,10 @@
 					pair1,
 					pair2
 				)
-				input2 = output.toString();
+				input2 = output;
 				_input2 = output;
 			} else {
-				_input2 = createAmount(input2, token2.asset.decimals);
+				_input2 = createAmount(input2.toString(), token2.asset.decimals);
 				const input = await calcInput(
 					await getConnection(),
 					_input2,
@@ -161,7 +221,7 @@
 					pair1,
 					pair2
 				)
-				input1 = input.toString();
+				input1 = input;
 				_input1 = input;
 			}
 			if (_input1.value !== 0n && _input2.value !== 0n){
@@ -178,11 +238,11 @@
 		}
 	}
 
-	function checkInputs(input1: string, input2: string) {
-		if (untrack(()=>_input1).toString() !== input1) {
+	function checkInputs(input1: Amount, input2: Amount) {
+		if (untrack(()=>_input1).value !== input1.value) {
 			lastEditedInput = true;
 			updateInputs(untrack(()=>lastEditedInput))
-		} else if (untrack(()=>_input2).toString() !== input2) {
+		} else if (untrack(()=>_input2).value !== input2.value) {
 			lastEditedInput = false;
 			updateInputs(untrack(()=>lastEditedInput))
 		}
@@ -196,6 +256,7 @@
 	onMount(async () => {
 		await getConnection()
 		setUpdater(updateBalances);
+		loadQueryParams();
 	});
 </script>
 
@@ -205,7 +266,7 @@
 >
 	<div class="allcenter !justify-between w-full px-6">
 		<h1 class="text-3xl font-extrabold">Swap</h1>
-		<button onclick={openSettings} class="w-[30px]"> <img src={cog} alt="slippage menu" /></button>
+		<button onclick={openSettings} class="clickable w-[30px]"> <img src={cog} alt="slippage menu" /></button>
 	</div>
 
 	<div class="allcenter relative flex-col w-full px-4 mt-4">
@@ -215,7 +276,7 @@
 			id="switch-background"
 			class="absolute allcenter bg-[#303030] w-[2cm] h-[2cm] rounded-full border-[#682c5a] border-2"
 		>
-			<button onclick={switchTokens} class="bg-[#101010] w-[1.5cm] h-[1.5cm] rounded-full">
+			<button onclick={switchTokens} class="bg-[#101010] clickable w-[1.5cm] h-[1.5cm] rounded-full">
 				<img src={switcharrow} alt="switch" />
 			</button>
 		</div>
@@ -224,7 +285,7 @@
 	</div>
 
 	{#if token1 && token2}
-		<div class="flex items-stretch flex-col self-stretch mx-8 text-sm opacity-50 mt-2">
+		<div class="info flex items-stretch flex-col self-stretch mx-8 text-sm mt-2">
 			<div class="flex justify-between max-[730px]:flex-col">
 				<span>
 					Swap {makeNumberReadable(input1.toString())}
@@ -232,7 +293,7 @@
 					for {makeNumberReadable(input2.toString())}
 						{token2?.asset.symbol}
 				</span>
-				<span>Price Impact: {impact}%</span>
+				<span class="{impact > 10? "danger": ""}">Price Impact: {impact}%</span>
 			</div>
 			<div class="flex justify-between max-[730px]:flex-col">
 				<span>Slippage: {slippage}%</span>
@@ -242,7 +303,8 @@
 	{/if}
 
 	<div class="allcenter w-full px-4 mt-3">
-		<button onclick={swap} id="swapbutton" class="disabled p-3 rounded-full w-full text-xl font-extrabold">
+		<button onclick={swap} id="swapbutton" disabled={!canSwap}
+			class="clickable p-3 rounded-full w-full text-xl font-extrabold">
 			Swap
 		</button>
 	</div>
@@ -257,12 +319,12 @@
 	}
 
 	#swapbutton {
-		background: linear-gradient(90.5deg, #ff02d1 -4.36%, #8eeafc 104.32%);
+		background: linear-gradient(to right, #ff02d1 0, #8eeafc 100%);
 	}
-		#swapbutton.disabled {
-			background: linear-gradient(90.5deg, #fff1 -4.36%, #fff2 104.32%);
-			color: #fff8;
-		}
+	#swapbutton:disabled {
+		background: linear-gradient(to right, #fff1 0, #fff2 100%);
+		color: #fff8;
+	}
 	#switch-background {
 		--top: calc(50% - 0.25rem);
 		--bottom: calc(50% + 0.25rem);
@@ -282,5 +344,13 @@
 			100% 0,
 			0 0
 		);
+	}
+	.info span {
+		opacity: 50%;
+	}
+
+	span.danger {
+		color: #ed32bf;
+		opacity: 90%;
 	}
 </style>

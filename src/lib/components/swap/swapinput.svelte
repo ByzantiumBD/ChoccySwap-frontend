@@ -2,13 +2,15 @@
 	import arrow from '$lib/images/common/arrow.svg';
 	import Tokenimg from '$lib/components/swap/tokenimg.svelte';
 	import type { TokenInfo } from '$lib/types';
-	import { makeNumberReadable, shortenNumber } from '$lib/number-utils';
+	import { makeNumberReadable, removeTrailingZeros, shortenNumber } from '$lib/number-utils';
 	import { untrack } from 'svelte';
+	import { createAmount, type Amount } from '@chromia/ft4';
+
 	type Props = {
 		isInput: boolean;
 		openTokens: (isInput: boolean)=>void;
 		tokenInfo: TokenInfo | undefined;
-		value: string;
+		value: Amount;
 	}
 
 	let {
@@ -21,13 +23,13 @@
 	let text = $state("0")
 
 	$effect(() => {
-		if (value === "0") {
+		if (value.value === 0n) {
 			text = "";
 			return
 		}
-		const txt = untrack(()=>text).replace(/\.?0*$/, "");
-		if ((txt? txt:"0") !== value) {
-			text = shortenNumber(value);
+		const txt = removeTrailingZeros(untrack(()=>text));
+		if ((txt? txt:"0") !== value.toString()) {
+			text = shortenNumber(value.toString());
 		}
 	})
 
@@ -35,8 +37,11 @@
 		let newText = text;
 		
 		if (newText === ".") newText = "0.";
+		// remove leading zeros
 		newText = newText.replace(/^0+(?=[1-9])/, "")
+		// remove every non-digit besides "."
 		newText = newText.replaceAll(/[^0-9.]/g, "")
+		// remove all "." after the first
 		newText = newText.replaceAll(/(?<=\..*)\./g, "")
 		const decimals = newText.match(/\.\d+/g)
 		if (decimals && decimals[0]) {
@@ -48,9 +53,13 @@
 				newText = integer + decimals[0].slice(0, expected)
 			}
 		}
-		const t = newText.replace(/\.0*$/, "").replace(/(?<=\.\d*)0*$/, "");
-		value = t? t : "0";
+		const t = removeTrailingZeros(newText);
+		value = createAmount(t? t : "0", tokenInfo?.asset.decimals ?? 0);
 		text = newText;
+	}
+
+	function maxBalance() {
+		value = tokenInfo?.amountOwned ?? createAmount(0,0)
 	}
 </script>
 
@@ -63,7 +72,7 @@
 		</span>
 		<button
 			onclick={() => openTokens(isInput)}
-			class="allcenter bg-[#101010] rounded-full mt-1 py-2 px-3 font-bold border border-gray-600"
+			class="clickable allcenter bg-[#101010] rounded-full mt-1 py-2 px-3 font-bold border border-gray-600"
 		>
 			{#if tokenInfo?.asset !== undefined}
 				<Tokenimg
@@ -78,9 +87,9 @@
 			{/if}
 			<img src={arrow} alt="choose token" class="w-[30px] h-[30px]" />
 		</button>
-		<span class="text-sm opacity-50 mt-1 pl-3">Balance: {
+		<button onclick={maxBalance} class="text-sm opacity-50 mt-1 pl-3">Balance: {
 			makeNumberReadable(tokenInfo?.amountOwned.toString() ?? "0")
-		}</span>
+		}</button>
 	</div>
 	<div class="flex flex-col items-end">
 		<input onclick={e => e.currentTarget.select()} type="text" placeholder="0.00" {oninput} bind:value={text}/>

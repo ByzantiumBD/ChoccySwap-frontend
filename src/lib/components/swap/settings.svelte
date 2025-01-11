@@ -49,7 +49,7 @@
 		let text = deadlineText;
 
 		text = text.replaceAll(/[^0-9]/g, '');
-		deadline = Math.min(Number(text), 100);
+		deadline = Math.min(100, Math.max(Number(text), 1));
 		deadlineText = deadline.toString();
 	});
 
@@ -105,8 +105,12 @@
 			</div>
 			<div class="allcenter mr-3 mt-4">
 				<p class="font-bold mb-1 ml-1 mr-auto">Deadline</p>
-				<input type="text" style="text-align:right;" bind:value={deadlineText} />
-				&nbsp;minutes
+				<div class="border border-[gray] rounded-3xl py-1 px-2">
+					<input type="text"
+						style="width:{2}em;text-align:center;"
+						bind:value={deadlineText} class="deadline" />
+				</div>
+				<span class="mx-2">minutes</span>
 			</div>
 		</div>
 	</div>

@@ -14,6 +14,16 @@
     justify-content: center;
 }
 
+.clickable {
+    transition: all 0.25s ease;
+    filter: brightness(1);
+    transform: scale(1);
+    &:active {
+        transform: scale(0.95);
+        filter: brightness(0.7)
+    }
+}
+
 #header-content #topbarmenu.open {
     display: flex;
     flex-direction: column;

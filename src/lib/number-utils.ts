@@ -1,6 +1,6 @@
-import { calcPrice, PRICE_PRECISION } from "./interactions/swaps";
+import { createAmountFromBalance } from "@chromia/ft4";
+import { ParsingError } from "./errors";
 import type { Pair } from "./types";
-
 
 export function shortenNumber(number: string) {
     const integer = number.replace(/^0+(?=[1-9])/, "").match(/^\d+/)?.[0];
@@ -47,9 +47,35 @@ function addPostfix(num: number) {
     return trunc(myNum.toString())+postfixes[postfixes.length-1]
 }
 
-export function getReadablePrice(pair: Pair) {    
-    const priceInCcy = calcPrice(pair.amount1, pair.amountCcy)/PRICE_PRECISION;
-    const priceInAsset = calcPrice(pair.amountCcy, pair.amount1)/PRICE_PRECISION;
+export function removeTrailingZeros(number: string): string {
+    return number.replace(/\.0*$/, "").replace(/(?<=\.\d+)0+$/, "")
+}
 
-    const ordersMagnitudeDifference = 1;
+export function getReadablePrice(pair: Pair): {val: string, numberOfDecimalZeros: number} {   
+    const decimalsDiff = pair.asset1.decimals - pair.ccy.decimals;
+    if (pair.amount1 === 0n || pair.amountCcy === 0n) {
+        return { val: "...", numberOfDecimalZeros: 0 }
+    }
+    const price = (Number(pair.amount1) / Number(pair.amountCcy)) / (10**decimalsDiff)
+
+    if (price >= 0.01) {
+        return { val: addPostfix(price), numberOfDecimalZeros: 0 }
+    } else {
+        const str = price.toString();
+        const numberOfDecimalZeros = str.match(/^(?<=0\.)0+/)?.[0].length
+        if (numberOfDecimalZeros === undefined) {
+            throw new ParsingError("Could not parse: " + str)
+        }
+        return {
+            val: str.replace(/^0.0+/, ""),
+            numberOfDecimalZeros
+        }
+    }
+}
+
+
+export function getReadableTvlCcy(pair: Pair) {   
+    return makeNumberReadable(
+        createAmountFromBalance(pair.amountCcy, pair.ccy.decimals).toString()
+    )
 }

@@ -1,5 +1,6 @@
 import { type Asset } from "@chromia/ft4";
 import { AssetFilter } from "./types";
+import type { BufferId } from "postchain-client";
 
 export const CCY_ID = '111621bc8c2e1ae559b0573c136a874941fb0e9b4c5489f01ac026c2bda6ffc6';
 
@@ -22,17 +23,21 @@ export function getAssetFilter(i: number) {
 
 export function filterAssets(assets: Asset[]) {
 	return assets.filter(a => {
-		const id = a.id.toString("hex").toLowerCase()
+		const id = getId(a.id)
 		return ASSET_IDS.includes(id);
 	});
 }
 
-export function getAssetId(asset: Asset) {
-    return asset.id.toString("hex").toLowerCase();
+export function isVerified(id: Buffer) {
+    return ASSET_IDS.includes(getId(id))
+}
+
+export function getId(id: BufferId) {
+    return id.toString("hex").toLowerCase();
 }
 
 export function isCcy(asset: Asset) {
-    return getAssetId(asset) === CCY_ID;
+    return getId(asset.id) === CCY_ID;
 }
 
 export function shortenId(id: Buffer) {

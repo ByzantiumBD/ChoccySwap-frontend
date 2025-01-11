@@ -1,9 +1,9 @@
 
 
-export class MetamaskError extends Error {
+export class WalletError extends Error {
     constructor(msg?: string) {
       super(msg);
-      this.name = "MetamaskError";
+      this.name = "WalletError";
     }
 }
 
@@ -39,6 +39,13 @@ export class NotEnoughLiquidityError extends Error {
     constructor(msg?: string) {
       super(msg);
       this.name = "NotEnoughLiquidityError";
+    }
+}
+
+export class ParsingError extends Error {
+    constructor(msg?: string) {
+      super(msg);
+      this.name = "ParsingError";
     }
 }
   
